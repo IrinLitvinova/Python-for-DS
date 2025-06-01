@@ -2,3 +2,4 @@
 
 1. Lecture_0_jupyter_demo.ipynb - робота з типами даних в Python
 2. HW_1_1_Основи_статистики_LI.ipynb - обчислення статистичних величин із використанням Python
+3. HW_1_2_Credit_EDA_LI.ipynb - обробка та аналіз даних із використанням Python
