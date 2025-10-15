@@ -58,7 +58,7 @@ def encode_categorical(train_df: pd.DataFrame, val_df: pd.DataFrame, categorical
     encoded_cols = list(encoder.get_feature_names_out(categorical_cols))
     train_df[encoded_cols] = encoder.transform(train_df[categorical_cols])
     val_df[encoded_cols] = encoder.transform(val_df[categorical_cols])
-    return train_df, val_df, encoder
+    return train_df, val_df, encoder, encoded_cols
 
 
 def scale_numeric(train_df: pd.DataFrame, val_df: pd.DataFrame, numeric_cols: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame, MinMaxScaler]:
@@ -94,7 +94,11 @@ def preprocess_customer_data(raw_df: pd.DataFrame, scale_numeric_data: bool = Fa
     categorical_cols = train_inputs.select_dtypes(include='object').columns.tolist()
 
     imputer = impute_numeric(train_inputs, val_inputs, numeric_cols)
-    train_inputs, val_inputs, encoder = encode_categorical(train_inputs, val_inputs, categorical_cols)
+    train_inputs, val_inputs, encoder, encoded_cols = encode_categorical(train_inputs, val_inputs, categorical_cols)
+
+    """ Select the columns to be used for training/prediction"""
+    train_inputs = train_inputs[numeric_cols + encoded_cols]
+    val_inputs = val_inputs[numeric_cols + encoded_cols]
 
     if scale_numeric_data:
         train_inputs, val_inputs, scaler = scale_numeric(train_inputs, val_inputs, numeric_cols)
