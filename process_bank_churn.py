@@ -29,19 +29,18 @@ def split_data(
 
 def separate_inputs_targets(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, List[str], str]:
     """Separate input features and target column."""
-    input_cols = list(df.columns)[1:-2]
+    input_cols = list(df.columns)[0:-2]
     target_col = list(df.columns)[-1]
     inputs = df[input_cols].copy()
     targets = df[target_col].copy()
     return inputs, targets, input_cols, target_col
 
 
-def encode_gender(train_df: pd.DataFrame, val_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def encode_gender(df: pd.DataFrame) -> pd.DataFrame:
     """Convert gender categorical values to numeric."""
     gender_map = {'Female': 0, 'Male': 1}
-    for df in [train_df, val_df]:
-        df['Gender'] = df['Gender'].map(gender_map).astype('int64')
-    return train_df, val_df
+    df['Gender'] = df['Gender'].map(gender_map).astype('int64')
+    return df
 
 
 def impute_numeric(train_df: pd.DataFrame, val_df: pd.DataFrame, numeric_cols: List[str]) -> SimpleImputer:
@@ -69,7 +68,7 @@ def scale_numeric(train_df: pd.DataFrame, val_df: pd.DataFrame, numeric_cols: Li
     return train_df, val_df, scaler
 
 
-def preprocess_customer_data(raw_df: pd.DataFrame, scale_numeric_data: bool = False) -> Dict[str, Any]:
+def preprocess_data(raw_df: pd.DataFrame, scale_numeric_data: bool = False) -> Dict[str, Any]:
     """
     High-level preprocessing pipeline for customer churn data.
 
@@ -88,7 +87,8 @@ def preprocess_customer_data(raw_df: pd.DataFrame, scale_numeric_data: bool = Fa
     train_inputs, train_targets, input_cols, _ = separate_inputs_targets(train_df)
     val_inputs, val_targets, _, _ = separate_inputs_targets(val_df)
 
-    train_inputs, val_inputs = encode_gender(train_inputs, val_inputs)
+    train_inputs = encode_gender(train_inputs)
+    val_inputs = encode_gender(val_inputs)
 
     numeric_cols = train_inputs.select_dtypes(include=np.number).columns.tolist()
     categorical_cols = train_inputs.select_dtypes(include='object').columns.tolist()
@@ -114,7 +114,45 @@ def preprocess_customer_data(raw_df: pd.DataFrame, scale_numeric_data: bool = Fa
         'scaler': scaler,
         'encoder': encoder,
         'imputer': imputer,
+        'numeric_cols': numeric_cols,
+        'categorical_cols': categorical_cols,
     }
+
+
+def preprocess_new_data(raw_df: pd.DataFrame, scale_numeric_data: bool = False) -> Dict[str, Any]:
+    
+    test_df = drop_unnecessary_columns(raw_df, ['CustomerId', 'Surname'])
+    test_df = test_df.copy()
+    test_df.insert(test_df.shape[1], 'Balance_codes', test_df['Balance'].map(lambda x: 0 if x == 0 else 1))
+       
+    test_inputs = encode_gender(test_df)
+
+    numeric_cols = test_inputs.select_dtypes(include=np.number).columns.tolist()
+    categorical_cols = test_inputs.select_dtypes(include='object').columns.tolist()
+    
+    #test_df[numeric_cols] = imputer.transform(test_df[numeric_cols])
+    #test_df[encoded_cols]
+    #test_df[preprocess_data.encoded_cols] = preprocess_data.encoder.transform(test_df[categorical_cols])
+    
+
+    """ Select the columns to be used for training/prediction"""
+    #test_inputs = test_inputs[numeric_cols]
+    
+    # if scale_numeric_data:
+    #     train_inputs, val_inputs, scaler = scale_numeric(train_inputs, val_inputs, numeric_cols)
+    # else:
+    #     scaler = None
+
+    return {
+        'X_test': test_inputs,
+        #'input_cols': input_cols,
+        #'scaler': scaler,
+        #'encoder': encoder,
+        #'imputer': imputer,
+    }
+
+
+
 
 # import pandas as pd
 # import numpy as np
